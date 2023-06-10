@@ -103,6 +103,18 @@ class Chat:
 				self.save_user(username)
 				return ok_message("Account successfully registered")
 			
+			elif (command=='groupleave'):
+				# session id, group id
+				return self.leave_group(j[1].strip(), j[2].strip()) 
+			
+			elif (command=='groupinvite'):
+				# session id, group id, invited username
+				return self.invite_user_to_group(j[1].strip(), j[2].strip(), j[3].strip()) 
+			
+			elif (command=='grouprecmsg'):
+				# session id, group id
+				return self.get_group_messages(j[1].strip(), j[2].strip())
+
 			elif (command=='inbox'):
 				sessionid = j[1].strip()
 				username = self.sessions[sessionid]['username']
@@ -215,6 +227,15 @@ class Chat:
 		self.save_group(group_id)
 		return('Seccessfully invited '+ invited_username+ ' to ' + self.groups[group_id]['nama'])
 
+	def get_group_messages(self, sessionid, group_id):
+		if (sessionid not in self.sessions):
+			return error_message('Session not found')
+		username = self.sessions[sessionid]['username']
+		if (group_id not in self.groups or username not in self.groups[group_id]['members']):
+			return error_message('failed to make group')
+		group_messages = self.groups[group_id]['message_history']
+		return {'status': 'OK', 'messages': group_messages}
+	
 	def get_inbox(self,username):
 		s_fr = self.get_user(username)
 		incoming = s_fr['incoming']
