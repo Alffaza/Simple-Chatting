@@ -57,6 +57,8 @@ class ChatClient:
         except:
             self.sock.close()
             return { 'status' : 'ERROR', 'message' : 'Gagal'}
+        
+    # COMMANDS
     def login(self,username,password):
         string="auth {} {} \r\n" . format(username,password)
         result = self.sendstring(string)

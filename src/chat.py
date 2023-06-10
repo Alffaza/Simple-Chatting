@@ -4,6 +4,7 @@ import json
 import uuid
 import logging
 import json
+import time
 from queue import  Queue
 from os import listdir
 from os.path import isfile, join
@@ -11,6 +12,14 @@ from os.path import isfile, join
 user_dir = "../users"
 group_dir = "../groups"
 
+def error_message(message):
+	return {"status": 'ERROR', 'message': message}
+
+def ok_message(message):
+	return {"status": 'OK', 'message': message}
+
+def ok_token(token):
+	return {"status": 'OK', 'tokenid': token}
 
 class Chat:
 	def __init__(self):
@@ -25,8 +34,8 @@ class Chat:
 			deserialized_json = json.load(file)
 			username = filename.split('.')[0]
 			self.users[username] = deserialized_json
-			print(username)
-			print(deserialized_json)
+			# print(username)
+			# print(deserialized_json)
 
 		for filename in listdir(group_dir):
 			filepath = group_dir + "/" + filename
@@ -34,17 +43,23 @@ class Chat:
 			deserialized_json = json.load(file)
 			username = filename.split('.')[0]
 			self.groups[username] = deserialized_json
-			print(username)
-			print(deserialized_json)
+			# print(username)
+			# print(deserialized_json)
 
 	def save_user(self, name):
 		filepath = user_dir + "/" + str(name) + ".json"
 		with open( filepath, "w") as outfile:
 			json.dump(self.users[name], outfile)
+
 	def save_group(self, id):
 		filepath = group_dir + "/" + str(id) + ".json"
 		with open( filepath, "w") as outfile:
 			json.dump(self.groups[id], outfile)
+
+	def delete_group(self, id):
+		filepath = group_dir + "/" + str(id) + ".json"
+		if (open( filepath, "w")):
+			os.remove(filepath)
 
 	def proses(self,data):
 		j=data.split(" ")
@@ -55,6 +70,7 @@ class Chat:
 				password=j[2].strip()
 				logging.warning("AUTH: auth {} {}" . format(username,password))
 				return self.autentikasi_user(username,password)
+			
 			elif (command=='send'):
 				sessionid = j[1].strip()
 				usernameto = j[2].strip()
@@ -64,6 +80,7 @@ class Chat:
 				usernamefrom = self.sessions[sessionid]['username']
 				logging.warning("SEND: session {} send message from {} to {}" . format(sessionid, usernamefrom,usernameto))
 				return self.send_message(sessionid,usernamefrom,usernameto,message)
+			
 			elif (command=='sendg'):
 				sessionid = j[1].strip()
 				group_id = j[2].strip()
@@ -73,6 +90,7 @@ class Chat:
 				usernamefrom = self.sessions[sessionid]['username']
 				logging.warning("SEND: session {} send message from {} to {}" . format(sessionid, usernamefrom,group_id))
 				return self.send_message_group(sessionid,usernamefrom,group_id,message)
+			
 			elif (command=='register'):
 				username = j[1].strip()
 				real_name = j[2].strip()
@@ -80,74 +98,64 @@ class Chat:
 				country = j[4].strip()
 
 				if (username in self.users):
-					return {'status': 'ERROR', 'message': 'User already exists'}
+					return error_message('User already exists')
 				self.users[username] = {'nama': real_name, "negara": country, "password": password}
 				self.save_user(username)
-				return {'status': 'OK', 'message': 'Account Registered'}
+				return ok_message("Account successfully registered")
+			
 			elif (command=='inbox'):
 				sessionid = j[1].strip()
 				username = self.sessions[sessionid]['username']
 				logging.warning("INBOX: {}" . format(sessionid))
 				return self.get_inbox(username)
 			else:
-				return {'status': 'ERROR', 'message': '**Protocol Tidak Benar'}
+				return error_message('Incorrect command')
 		except KeyError:
-			return { 'status': 'ERROR', 'message' : 'Informasi tidak ditemukan'}
+			return error_message('Missing Information')
 		except IndexError:
-			return {'status': 'ERROR', 'message': '--Protocol Tidak Benar'}
+			return error_message('Incorrect command arguments')
+		
+
 	def autentikasi_user(self,username,password):
 		if (username not in self.users):
-			return { 'status': 'ERROR', 'message': 'User Tidak Ada' }
+			return error_message('User not found')
 		if (self.users[username]['password']!= password):
-			return { 'status': 'ERROR', 'message': 'Password Salah' }
+			return error_message('Incorrect password')
 		tokenid = str(uuid.uuid4()) 
 		self.sessions[tokenid]={ 'username': username, 'userdetail':self.users[username]}
-		return { 'status': 'OK', 'tokenid': tokenid }
+		return ok_token(tokenid)
+	
 	def get_user(self,username):
 		if (username not in self.users):
 			return False
 		return self.users[username]
+	
 	def get_group(self,group_id):
 		if (group_id not in self.groups):
 			return False
 		return self.groups[group_id]
+	
 	def send_message_group(self, sessionid, username_from, group_id, message):
 		if (sessionid not in self.sessions):
-			return {'status': 'ERROR', 'message': 'Session Tidak Ditemukan'}
+			return error_message('Session not found')
 		s_fr = self.get_user(username_from)
 		g_to = self.get_group(group_id)
-
 		if (s_fr==False or g_to==False):
-			return {'status': 'ERROR', 'message': 'Group Tidak Ditemukan'}
-
+			return error_message('Group not found')
 		message_log = { 'msg_from': s_fr['nama'], 'msg_to': g_to['nama'], 'msg': message }
-		# outqueue_sender = s_fr['outgoing']
-		# # inqueue_receiver = g_to['incoming']
-		# try:	
-		# 	outqueue_sender[username_from].put(message_log)
-		# except KeyError:
-		# 	outqueue_sender[username_from]=Queue()
-		# 	outqueue_sender[username_from].put(message_log)
-		# try:
-		# 	inqueue_receiver[username_from].put(message_log)
-		# except KeyError:
-		# 	inqueue_receiver[username_from]=Queue()
-		# 	inqueue_receiver[username_from].put(message_log)
-		
 		self.groups[group_id]['message_history'].append({"sender": username_from, "mesasge": message})
 		print(self.groups[group_id])
 		self.save_group(group_id)
-
-		return {'status': 'OK', 'message': 'Message Sent'}
+		return ok_message('Message sent')
 
 	def send_message(self,sessionid,username_from,username_dest,message):
 		if (sessionid not in self.sessions):
-			return {'status': 'ERROR', 'message': 'Session Tidak Ditemukan'}
+			return error_message('Session not found')
 		s_fr = self.get_user(username_from)
 		s_to = self.get_user(username_dest)
 		
 		if (s_fr==False or s_to==False):
-			return {'status': 'ERROR', 'message': 'User Tidak Ditemukan'}
+			return error_message('User not found')
 
 		message = { 'msg_from': s_fr['nama'], 'msg_to': s_to['nama'], 'msg': message }
 		outqueue_sender = s_fr['outgoing']
@@ -162,7 +170,50 @@ class Chat:
 		except KeyError:
 			inqueue_receiver[username_from]=Queue()
 			inqueue_receiver[username_from].put(message)
-		return {'status': 'OK', 'message': 'Message Sent'}
+		return ok_message('Message sent')
+	
+	def get_groups_with_user(self, username):
+		available_groups = {}
+		for group in self.groups:
+			if (username in self.groups[group]['members']):
+				available_groups[group] = self.groups[group]['nama']
+		return available_groups
+	
+	def leave_group(self,sessionid, group_id):
+		if (sessionid not in self.sessions):
+			return error_message('Session not found')
+		username = self.sessions[sessionid]['username']
+		if (group_id not in self.groups or username not in self.groups[group_id]['members']):
+			return error_message('Group not found')
+		self.groups[group_id]['members'].remove(username)
+		if(len(self.groups[group_id]['members']) == 0):
+			self.delete_group(group_id)
+		else:
+			self.save_group(group_id)
+		return ok_message('Successfully left the group')
+	
+	def create_group(self, sessionid, group_name):
+		if (sessionid not in self.sessions):
+			return error_message('Session not found')
+		username = self.sessions[sessionid]['username']
+		group_id = str(time.time()).split('.')[0]
+		if(group_id in self.groups):
+			return error_message('failed to make group')
+		self.groups[group_id] = {"nama": group_name, "message_history": [{}], "members": [username]}
+		self.save_group(group_id)
+		return ok_message('Successfully created group' + group_name)
+
+	def invite_user_to_group(self, sessionid, group_id, invited_username):
+		if (sessionid not in self.sessions):
+			return error_message('Session not found')
+		if (invited_username not in self.users):
+			return error_message('The invited user does not exist')
+		username = self.sessions[sessionid]['username']
+		if (group_id not in self.groups or username not in self.groups[group_id]['members']):
+			return error_message('Group not found')
+		self.groups[group_id]['members'].append(invited_username)
+		self.save_group(group_id)
+		return('Seccessfully invited '+ invited_username+ ' to ' + self.groups[group_id]['nama'])
 
 	def get_inbox(self,username):
 		s_fr = self.get_user(username)
@@ -180,22 +231,25 @@ if __name__=="__main__":
 	j = Chat()
 	sesi = j.proses("auth messi surabaya")
 	print(sesi)
-	#sesi = j.autentikasi_user('messi','surabaya')
-
 	#print sesi
 	tokenid = sesi['tokenid']
-	print(j.proses("send {} henderson hello gimana kabarnya son " . format(tokenid)))
-	print(j.proses("send {} messi hello gimana kabarnya mess " . format(tokenid)))
+
+	#testing
+	print(j.leave_group(tokenid, '1686417836'))
+	# print(j.invite_user_to_group(tokenid, '1686418078', 'faza'))
+
+	# print(j.proses("send {} henderson hello gimana kabarnya son " . format(tokenid)))
+	# print(j.proses("send {} messi hello gimana kabarnya mess " . format(tokenid)))
 
 	#print j.send_message(tokenid,'messi','henderson','hello son')
 	#print j.send_message(tokenid,'henderson','messi','hello si')
 	#print j.send_message(tokenid,'lineker','messi','hello si dari lineker')
 
 
-	print("isi mailbox dari messi")
-	print(j.get_inbox('messi'))
-	print("isi mailbox dari henderson")
-	print(j.get_inbox('henderson'))
+	# print("isi mailbox dari messi")
+	# print(j.get_inbox('messi'))
+	# print("isi mailbox dari henderson")
+	# print(j.get_inbox('henderson'))
 
 
 

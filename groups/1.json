@@ -1,1 +1,8 @@
-{"nama": "Group1", "message_history": [{"from": "messi", "message": "hi guys"}, {"sender": "messi", "mesasge": "  asdasdwwww \r\n"}], "members": ["messi", "lineker"], "incoming": {}, "outgoing": {}}
+{
+  "nama": "Group1",
+  "message_history": [
+    { "sender": "messi", "message": "hi guys" },
+    { "sender": "messi", "mesasge": "  asdasdwwww \r\n" }
+  ],
+  "members": ["messi", "lineker"]
+}
