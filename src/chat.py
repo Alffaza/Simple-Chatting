@@ -16,6 +16,7 @@ class Chat:
 	def __init__(self):
 		self.sessions={}
 		self.users = {}
+		# users[username] = {nama: "", negara: "", password: ""}]}
 		self.groups = {}
 		# groups[id] = {members: [], message_history: [{from, message}]}]}
 		for filename in listdir(user_dir):
@@ -72,6 +73,17 @@ class Chat:
 				usernamefrom = self.sessions[sessionid]['username']
 				logging.warning("SEND: session {} send message from {} to {}" . format(sessionid, usernamefrom,group_id))
 				return self.send_message_group(sessionid,usernamefrom,group_id,message)
+			elif (command=='register'):
+				username = j[1].strip()
+				real_name = j[2].strip()
+				password = j[3].strip()
+				country = j[4].strip()
+
+				if (username in self.users):
+					return {'status': 'ERROR', 'message': 'User already exists'}
+				self.users[username] = {'nama': real_name, "negara": country, "password": password}
+				self.save_user(username)
+				return {'status': 'OK', 'message': 'Account Registered'}
 			elif (command=='inbox'):
 				sessionid = j[1].strip()
 				username = self.sessions[sessionid]['username']
@@ -109,13 +121,13 @@ class Chat:
 			return {'status': 'ERROR', 'message': 'Group Tidak Ditemukan'}
 
 		message_log = { 'msg_from': s_fr['nama'], 'msg_to': g_to['nama'], 'msg': message }
-		outqueue_sender = s_fr['outgoing']
-		# inqueue_receiver = g_to['incoming']
-		try:	
-			outqueue_sender[username_from].put(message_log)
-		except KeyError:
-			outqueue_sender[username_from]=Queue()
-			outqueue_sender[username_from].put(message_log)
+		# outqueue_sender = s_fr['outgoing']
+		# # inqueue_receiver = g_to['incoming']
+		# try:	
+		# 	outqueue_sender[username_from].put(message_log)
+		# except KeyError:
+		# 	outqueue_sender[username_from]=Queue()
+		# 	outqueue_sender[username_from].put(message_log)
 		# try:
 		# 	inqueue_receiver[username_from].put(message_log)
 		# except KeyError:
