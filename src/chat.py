@@ -1,3 +1,4 @@
+import base64
 import sys
 import os
 import json
@@ -7,7 +8,7 @@ import json
 import time
 from queue import  Queue
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, dirname, realpath
 
 user_dir = "../users"
 group_dir = "../groups"
@@ -80,6 +81,15 @@ class Chat:
 				usernamefrom = self.sessions[sessionid]['username']
 				logging.warning("SEND: session {} send message from {} to {}" . format(sessionid, usernamefrom,usernameto))
 				return self.send_message(sessionid,usernamefrom,usernameto,message)
+			
+			elif (command=='sendfile'):
+				sessionid = j[1].strip()
+				usernameto = j[2].strip()
+				filepath = j[3].strip()
+				encoded_file = j[4].strip()
+				usernamefrom = self.sessions[sessionid]['username']
+				logging.warning("SEND: session {} send file from {} to {}" . format(sessionid, usernamefrom,usernameto))
+				return self.send_file(sessionid,usernamefrom,usernameto,filepath, encoded_file)
 			
 			elif (command=='sendg'):
 				sessionid = j[1].strip()
@@ -183,6 +193,47 @@ class Chat:
 			inqueue_receiver[username_from]=Queue()
 			inqueue_receiver[username_from].put(message)
 		return ok_message('Message sent')
+	
+	def send_file(self,sessionid,username_from,username_dest,filepath, encoded_file):
+		if (sessionid not in self.sessions):
+			return error_message('Session not found')
+		s_fr = self.get_user(username_from)
+		s_to = self.get_user(username_dest)
+		
+		if (s_fr==False or s_to==False):
+			return error_message('User not found')
+
+		filename = os.path.basename(filepath)
+		message = { 'msg_from': s_fr['nama'], 'msg_to': s_to['nama'], 'file_name': filename, 'file': encoded_file }
+		outqueue_sender = s_fr['outgoing']
+		inqueue_receiver = s_to['incoming']
+		try:	
+			outqueue_sender[username_from].put(message)
+		except KeyError:
+			outqueue_sender[username_from]=Queue()
+			outqueue_sender[username_from].put(message)
+		try:
+			inqueue_receiver[username_from].put(message)
+		except KeyError:
+			inqueue_receiver[username_from]=Queue()
+			inqueue_receiver[username_from].put(message)
+		
+		#simpan file dalam folder files/<user_to>/dest_filename dengan nama <tanggal>-<user_from>-<user_to>-<filename>.<ekstensi>
+		#misal 2017-04-05-messi-henderson-funny.gif
+		filedest = join(dirname(realpath(__file__)), "files/")
+		os.makedirs(filedest, exist_ok=True)
+		filedest = join(filedest, username_dest)
+		os.makedirs(filedest, exist_ok=True)
+		time_now = time.strftime("%Y-%m-%d_%H-%M-%S")
+		filesum = f"{time_now}-{username_from}-{username_dest}-{filename}"
+		filedest = join(filedest, filesum)
+
+		decode_content = base64.decodebytes(encoded_file.encode('utf-8'))
+		with open(filedest, "wb") as f:
+			f.write(decode_content)
+
+		return ok_message('File sent')
+
 	
 	def get_groups_with_user(self, username):
 		available_groups = {}

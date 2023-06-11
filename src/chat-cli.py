@@ -1,3 +1,4 @@
+import base64
 import socket
 import os
 import json
@@ -27,6 +28,10 @@ class ChatClient:
                 for w in j[2:]:
                    message="{} {}" . format(message,w)
                 return self.sendmessage(usernameto,message)
+            elif (command=='sendfile'):
+                usernameto = j[1].strip()
+                filepath = j[2].strip()
+                return self.sendfile(usernameto,filepath)
             elif (command=='sendg'):
                 usernameto = j[1].strip()
                 message=""
@@ -68,6 +73,15 @@ class ChatClient:
         else:
             return "Error, {}" . format(result['message'])
         
+    def register(self, username, real_name, password, country):
+        string = "register {} {} {} {}\r\n" . format(username, real_name, password, country)
+        print(string)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return "successfully created account {}" . format(username)
+        else:
+            return "Error, {}" . format(result['message'])
+        
     def sendmessage(self,usernameto="xxx",message="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
@@ -78,16 +92,28 @@ class ChatClient:
             return "message sent to {}" . format(usernameto)
         else:
             return "Error, {}" . format(result['message'])
+
+    #create function sendfile from specific path
+    def sendfile(self,usernameto="xxx",filepath="xxx"):
+        if (self.tokenid==""):
+            return "Error, not authorized"
         
-    def register(self, username, real_name, password, country):
-        string = "register {} {} {} {}\r\n" . format(username, real_name, password, country)
-        print(string)
+        #check if file exists
+        if not os.path.isfile(filepath):
+            return "Error, file not found"
+        
+        # Decode bytes to string
+        with open(filepath, 'rb') as f:
+            content_bytes = f.read()
+            encoded_content = base64.b64encode(content_bytes).decode('utf-8')
+        string="sendfile {} {} {} {} \r\n" . format(self.tokenid,usernameto,filepath,encoded_content)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return "successfully created account {}" . format(username)
+            return "file sent to {}" . format(usernameto)
         else:
             return "Error, {}" . format(result['message'])
         
+
     def sendmessagegroup(self,usernameto="xxx",message="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
@@ -108,7 +134,6 @@ class ChatClient:
             return "{}" . format(json.dumps(result['messages']))
         else:
             return "Error, {}" . format(result['message'])
-
 
 
 if __name__=="__main__":
