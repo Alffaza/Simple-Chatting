@@ -11,7 +11,7 @@ from os import listdir
 from os.path import isfile, join, dirname, realpath
 
 user_dir = "../users"
-privates_dir = "../privates"
+private_dir = "../privates"
 group_dir = "../groups"
 
 def error_message(message):
@@ -43,14 +43,14 @@ class Chat:
 			# print(username)
 			# print(deserialized_json)
 
-		if not os.path.exists(privates_dir):
-			os.makedirs(privates_dir)
-		for filename in listdir(privates_dir):
-			filepath = privates_dir + "/" + filename
+		if not os.path.exists(private_dir):
+			os.makedirs(private_dir)
+		for filename in listdir(private_dir):
+			filepath = private_dir + "/" + filename
 			file = open(filepath,'r')
 			deserialized_json = json.load(file)
 			username = filename.split('.')[0]
-			self.users[username]['incoming'] = deserialized_json
+			self.privates[username]['incoming'] = deserialized_json
 			# print(username)
 			# print(deserialized_json)
 
@@ -71,9 +71,9 @@ class Chat:
 			json.dump(self.users[name], outfile)
 
 	def save_private(self, name):
-		filepath = privates_dir + "/" + str(name) + ".json"
+		filepath = private_dir + "/" + str(name) + ".json"
 		with open( filepath, "w") as outfile:
-			json.dump(self.users[name]['incoming'], outfile)
+			json.dump(self.privates[name], outfile)
 
 	def save_group(self, id):
 		filepath = group_dir + "/" + str(id) + ".json"
@@ -188,8 +188,8 @@ class Chat:
 				return self.get_group_messages(sessionid, user_me, group_id)
 			else:
 				return error_message('Incorrect command')
-		except KeyError:
-			return error_message('Missing Information')
+		# except KeyError:
+		# 	return error_message('Missing Information')
 		except IndexError:
 			return error_message('Incorrect command arguments')
 		
@@ -238,6 +238,8 @@ class Chat:
 		# message_log = { 'msg_from': s_fr['nama'], 'msg_to': s_to['nama'], 'msg': message }
 		sorted_user = sorted([username_from, username_dest])
 		userxy = f"{sorted_user[0]}_{sorted_user[1]}"
+		if (userxy not in self.privates):
+			self.privates[userxy] = {'userx': sorted_user[0], 'usery': sorted_user[1], 'message_history': [{}]}
 		self.privates[userxy]['message_history'].append({"sender": username_from, "message": message})
 		print(self.privates[userxy])
 		self.save_private(userxy)
