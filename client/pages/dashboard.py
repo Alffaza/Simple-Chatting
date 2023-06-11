@@ -1,8 +1,8 @@
 from flet import *
-from utils.extras import *
+from util.extras import *
 
 class DashboardPage(Container):
-  def __init__(self,switch_page,username,):
+  def __init__(self,switch_page,username):
     super().__init__()
     self.offset = transform.Offset(0,0,)
     self.username = username
