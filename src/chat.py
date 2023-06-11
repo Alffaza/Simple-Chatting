@@ -339,7 +339,7 @@ class Chat:
 		group_id = str(time.time()).split('.')[0]
 		if(group_id in self.groups):
 			return error_message('Failed to make group')
-		self.groups[group_id] = {"nama": group_name, "message_history": [{}], "members": [user_me]}
+		self.groups[group_id] = {"nama": group_name, "message_history": [], "members": [user_me]}
 		self.save_group(group_id)
 		return ok_message('Successfully created group' + group_name)
 
