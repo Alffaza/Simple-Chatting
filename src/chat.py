@@ -126,6 +126,15 @@ class Chat:
 				logging.warning("SENDGROUP: session {} send message from {} to group {}" . format(sessionid, usernamefrom, group_id))
 				return self.send_message_group(sessionid, usernamefrom, group_id, message)
 			
+			elif (command=='sendfilegroup'):
+				sessionid = j[1].strip()
+				group_id = j[2].strip()
+				filepath = j[3].strip()
+				encoded_file = j[4].strip()
+				usernamefrom = self.sessions[sessionid]['username']
+				logging.warning("SENDGROUP: session {} send file from user {} to group {}" . format(sessionid, usernamefrom, group_id))
+				return self.send_file_group(sessionid, usernamefrom, group_id, filepath, encoded_file)
+			
 			elif (command=='leavegroup'):
 				# session id, group id
 				sessionid = j[1].strip()
@@ -248,8 +257,8 @@ class Chat:
 		os.makedirs(filedest, exist_ok=True)
 		filedest = join(filedest, username_dest)
 		os.makedirs(filedest, exist_ok=True)
-		time_now = time.strftime("%Y-%m-%d_%H-%M-%S")
-		filesum = f"{time_now}-{username_from}-{username_dest}-{filename}"
+		time_now = time.strftime("%Y%m%d-%H%M%S")
+		filesum = f"{time_now}_{username_from}_{username_dest}_{filename}"
 		filedest = join(filedest, filesum)
 
 		decode_content = base64.decodebytes(encoded_file.encode('utf-8'))
@@ -257,7 +266,33 @@ class Chat:
 			f.write(decode_content)
 
 		return ok_message('File sent')
+	
+	def send_file_group(self, sessionid, username_from, group_id, filepath, encoded_file):
+		if (sessionid not in self.sessions):
+			return error_message('Session not found')
+		s_fr = self.get_user(username_from)
+		g_to = self.get_group(group_id)
+		if (s_fr==False or g_to==False):
+			return error_message('Group not found')
+		filename = os.path.basename(filepath)
+		time_now = time.strftime("%Y%m%d-%H%M%S")
+		filesum = f"{time_now}_{username_from}_{group_id}_{filename}"
+		self.groups[group_id]['message_history'].append({"sender": username_from, "filename": filesum, "file": encoded_file})
+		self.save_group(group_id)
+		
+		#simpan file dalam folder files/<user_to>/dest_filename dengan nama <tanggal>-<user_from>-<user_to>-<filename>.<ekstensi>
+		#misal 2017-04-05-messi-henderson-funny.gif
+		filedest = join(dirname(realpath(__file__)), "files/")
+		os.makedirs(filedest, exist_ok=True)
+		filedest = join(filedest, group_id)
+		os.makedirs(filedest, exist_ok=True)
+		filedest = join(filedest, filesum)
 
+		decode_content = base64.decodebytes(encoded_file.encode('utf-8'))
+		with open(filedest, "wb") as f:
+			f.write(decode_content)
+
+		return ok_message('File sent')
 	
 	def get_groups_with_user(self, sessionid, username):
 		if (sessionid not in self.sessions):
@@ -285,7 +320,7 @@ class Chat:
 			return error_message('Session not found')
 		group_id = str(time.time()).split('.')[0]
 		if(group_id in self.groups):
-			return error_message('failed to make group')
+			return error_message('Failed to make group')
 		self.groups[group_id] = {"nama": group_name, "message_history": [{}], "members": [user_me]}
 		self.save_group(group_id)
 		return ok_message('Successfully created group' + group_name)
@@ -299,15 +334,15 @@ class Chat:
 			return error_message('Group not found')
 		self.groups[group_id]['members'].append(invited_username)
 		self.save_group(group_id)
-		return('Seccessfully invited '+ invited_username+ ' to ' + self.groups[group_id]['nama'])
+		return ok_message('Seccessfully invited '+ invited_username+ ' to ' + self.groups[group_id]['nama'])
 
 	def get_group_messages(self, sessionid, user_me, group_id):
 		if (sessionid not in self.sessions):
 			return error_message('Session not found')
 		if (group_id not in self.groups or user_me not in self.groups[group_id]['members']):
-			return error_message('failed to make group')
+			return error_message('Group not found')
 		group_messages = self.groups[group_id]['message_history']
-		return {'status': 'OK', 'messages': group_messages}
+		return ok_message(group_messages)
 	
 	def get_inbox(self,sessionid, username):
 		if (sessionid not in self.sessions):
@@ -320,7 +355,7 @@ class Chat:
 			while not incoming[users].empty():
 				msgs[users].append(s_fr['incoming'][users].get_nowait())
 			
-		return {'status': 'OK', 'messages': msgs}
+		return ok_message(msgs)
 
 
 if __name__=="__main__":

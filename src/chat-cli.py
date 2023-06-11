@@ -53,7 +53,7 @@ class ChatClient:
                 for w in j[2:]:
                    message="{} {}" . format(message,w)
                 return self.sendmessagegroup(group_id,message)
-            elif (command=='sendgfile'):
+            elif (command=='sendfilegroup'):
                 group_id = j[1].strip()
                 filepath = j[2].strip()
                 return self.sendfilegroup(group_id,filepath)
@@ -154,8 +154,8 @@ class ChatClient:
             return "Error, not authorized"
         string="listgroup {} \r\n" . format(self.tokenid)
         result = self.sendstring(string)
-        if result['status']=='OK':
-            return "{}" . format(json.dumps(result['groups']))
+        if result!=[]:
+            return "{}" . format(json.dumps(result))
         else:
             return "Error, {}" . format(result['message'])
         
@@ -193,10 +193,10 @@ class ChatClient:
         with open(filepath, 'rb') as f:
             content_bytes = f.read()
             encoded_content = base64.b64encode(content_bytes).decode('utf-8')
-        string="sendgfile {} {} {} {} \r\n" . format(self.tokenid,group_id,filepath,encoded_content)
+        string="sendfilegroup {} {} {} {} \r\n" . format(self.tokenid,group_id,filepath,encoded_content)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return "file sent to {}" . format(group_id)
+            return "file sent to group {}" . format(group_id)
         else:
             return "Error, {}" . format(result['message'])
         
@@ -227,7 +227,7 @@ class ChatClient:
         string="inboxgroup {} {} \r\n" . format(self.tokenid,group_id)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return "{}" . format(json.dumps(result['messages']))
+            return "{}" . format(json.dumps(result['message']))
         else:
             return "Error, {}" . format(result['message'])
 
