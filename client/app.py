@@ -5,6 +5,9 @@ from pages.mainpage import MainPage
 from pages.login import LoginPage
 from pages.signup import SignupPage
 from pages.dashboard import DashboardPage
+from pages.group_list import GroupChatList
+from pages.group_chat import GroupChat
+# from pages.private_chat import 
 from service.chat_cli import ChatClient
 import sys
 import asyncio
@@ -137,7 +140,44 @@ class App(UserControl):
 
         self.signup.update()
       return
+    elif e.control.data == 'moveto_dashboard':
+      id = self.chat_client.tokenid
+      self._name = self.chat_client.username
+      self._username = self.chat_client.username
+      self.screen_views.controls.clear()
+      self.dashboard = DashboardPage(self.switch_page,username=self._username)
+      self.screen_views.controls.append(self.dashboard)
+      self.screen_views.update()
 
+    elif e.control.data == 'open_groups':
+      response = self.chat_client.listgroup()
+      if response['status'] == 'OK':
+        self.grouplist = GroupChatList(self.switch_page,response['message'])
+        self.screen_views.controls.append(self.grouplist)
+        self.screen_views.update()
+        if self.groupchat != None and self.groupchat.refresher != None:
+          self.groupchat.refresher.join()
+
+    elif e.control.data.split(' ')[0] == 'open_group_chat':
+      group_id = e.control.data.split(' ')[1]
+      group_name = e.control.data.split(' ')[2]
+      response = self.chat_client.inboxgroup(group_id)
+      if response['status'] == 'OK':
+        self.groupchat = GroupChat(self.switch_page, group_id,group_name, self.chat_client, self.screen_views)
+        self.screen_views.controls.append(self.groupchat)
+        self.screen_views.update()
+      else:
+        print('error')
+
+    elif e.control.data.split(' ')[0] == 'send_message_group':
+      group_id = e.control.data.split(' ')[1]
+      sent_message = self.groupchat.user_text_input.content.value
+      response = self.chat_client.sendmessagegroup(group_id, sent_message)
+      if response['status'] == 'OK':
+        self.groupchat.update_messages()
+        self.screen_views.update()
+      else:
+        print('error')
 
     elif e.control.data == 'process_login':
       username = self.main_page.username_input.content.value
@@ -149,9 +189,7 @@ class App(UserControl):
         self._name = self.chat_client.username
         self._username = self.chat_client.username
         self.screen_views.controls.clear()
-        # self.login_page = LoginPage(self.switch_page,name=self._name,username=self._username,dp='')
         self.dashboard = DashboardPage(self.switch_page,username=self._username)
-        # self.login_page.content.on_focus = self.hide_error
         self.screen_views.controls.append(self.dashboard)
         self.screen_views.update()
       else:
