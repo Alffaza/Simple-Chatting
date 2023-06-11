@@ -10,7 +10,7 @@ class ChatClient:
         self.server_address = (target_ip,target_port)
         self.sock.connect(self.server_address)
         self.tokenid=""
-        print('using ' + target_ip + str(target_port))
+        print('using ' + target_ip + ':' +str(target_port))
 
     def is_success(self, message):
         return {'status':'OK', 'message': message}
