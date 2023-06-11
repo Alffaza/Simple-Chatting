@@ -11,6 +11,7 @@ from os import listdir
 from os.path import isfile, join, dirname, realpath
 
 user_dir = "../users"
+privates_dir = "../privates"
 group_dir = "../groups"
 
 def error_message(message):
@@ -27,8 +28,12 @@ class Chat:
 		self.sessions={}
 		self.users = {}
 		# users[username] = {nama: "", negara: "", password: ""}]}
+		self.privates = {}
+		# private[userxy] = {userx: "", usery: "", message_history: [{from, message}]}]
 		self.groups = {}
 		# groups[id] = {members: [], message_history: [{from, message}]}]}
+		if not os.path.exists(user_dir):
+			os.makedirs(user_dir)
 		for filename in listdir(user_dir):
 			filepath = user_dir + "/" + filename
 			file = open(filepath,'r')
@@ -38,6 +43,19 @@ class Chat:
 			# print(username)
 			# print(deserialized_json)
 
+		if not os.path.exists(privates_dir):
+			os.makedirs(privates_dir)
+		for filename in listdir(privates_dir):
+			filepath = privates_dir + "/" + filename
+			file = open(filepath,'r')
+			deserialized_json = json.load(file)
+			username = filename.split('.')[0]
+			self.users[username]['incoming'] = deserialized_json
+			# print(username)
+			# print(deserialized_json)
+
+		if not os.path.exists(group_dir):
+			os.makedirs(group_dir)
 		for filename in listdir(group_dir):
 			filepath = group_dir + "/" + filename
 			file = open(filepath,'r')
@@ -51,6 +69,11 @@ class Chat:
 		filepath = user_dir + "/" + str(name) + ".json"
 		with open( filepath, "w") as outfile:
 			json.dump(self.users[name], outfile)
+
+	def save_private(self, name):
+		filepath = privates_dir + "/" + str(name) + ".json"
+		with open( filepath, "w") as outfile:
+			json.dump(self.users[name]['incoming'], outfile)
 
 	def save_group(self, id):
 		filepath = group_dir + "/" + str(id) + ".json"
@@ -197,7 +220,7 @@ class Chat:
 		g_to = self.get_group(group_id)
 		if (s_fr==False or g_to==False):
 			return error_message('Group not found')
-		message_log = { 'msg_from': s_fr['nama'], 'msg_to': g_to['nama'], 'msg': message }
+		# message_log = { 'msg_from': s_fr['nama'], 'msg_to': g_to['nama'], 'msg': message }
 		self.groups[group_id]['message_history'].append({"sender": username_from, "mesasge": message})
 		print(self.groups[group_id])
 		self.save_group(group_id)
@@ -212,19 +235,12 @@ class Chat:
 		if (s_fr==False or s_to==False):
 			return error_message('User not found')
 
-		message = { 'msg_from': s_fr['nama'], 'msg_to': s_to['nama'], 'msg': message }
-		outqueue_sender = s_fr['outgoing']
-		inqueue_receiver = s_to['incoming']
-		try:	
-			outqueue_sender[username_from].put(message)
-		except KeyError:
-			outqueue_sender[username_from]=Queue()
-			outqueue_sender[username_from].put(message)
-		try:
-			inqueue_receiver[username_from].put(message)
-		except KeyError:
-			inqueue_receiver[username_from]=Queue()
-			inqueue_receiver[username_from].put(message)
+		# message_log = { 'msg_from': s_fr['nama'], 'msg_to': s_to['nama'], 'msg': message }
+		sorted_user = sorted([username_from, username_dest])
+		userxy = f"{sorted_user[0]}_{sorted_user[1]}"
+		self.privates[userxy]['message_history'].append({"sender": username_from, "message": message})
+		print(self.privates[userxy])
+		self.save_private(userxy)
 		return ok_message('Message sent')
 	
 	def send_file(self, sessionid, username_from, username_dest, filepath, encoded_file):

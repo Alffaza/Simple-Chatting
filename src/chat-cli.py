@@ -90,11 +90,11 @@ class ChatClient:
         
     # COMMANDS
     def login(self,username,password):
-        string="auth {} {} \r\n" . format(username,password)
+        string="auth {} {} \r\n" . format(username, password)
         result = self.sendstring(string)
         if result['status']=='OK':
             self.tokenid=result['tokenid']
-            return "username {} logged in, token {} " .format(username,self.tokenid)
+            return "username {} logged in, token {} " .format(username, self.tokenid)
         else:
             return "Error, {}" . format(result['message'])
         
@@ -110,7 +110,7 @@ class ChatClient:
     def sendmessage(self,usernameto="xxx",message="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
-        string="send {} {} {} \r\n" . format(self.tokenid,usernameto,message)
+        string="send {} {} {} \r\n" . format(self.tokenid, usernameto, message)
         print(string)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -131,7 +131,7 @@ class ChatClient:
         with open(filepath, 'rb') as f:
             content_bytes = f.read()
             encoded_content = base64.b64encode(content_bytes).decode('utf-8')
-        string="sendfile {} {} {} {} \r\n" . format(self.tokenid,usernameto,filepath,encoded_content)
+        string="sendfile {} {} {} {} \r\n" . format(self.tokenid, usernameto, filepath, encoded_content)
         result = self.sendstring(string)
         if result['status']=='OK':
             return "file sent to {}" . format(usernameto)
@@ -141,7 +141,7 @@ class ChatClient:
     def creategroup(self,groupname="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
-        string="creategroup {} {} \r\n" . format(self.tokenid,groupname)
+        string="creategroup {} {} \r\n" . format(self.tokenid, groupname)
         print(string)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -173,7 +173,7 @@ class ChatClient:
     def sendmessagegroup(self,group_id="xxx",message="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
-        string="sendgroup {} {} {} \r\n" . format(self.tokenid,group_id,message)
+        string="sendgroup {} {} {} \r\n" . format(self.tokenid, group_id, message)
         print(string)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -193,7 +193,7 @@ class ChatClient:
         with open(filepath, 'rb') as f:
             content_bytes = f.read()
             encoded_content = base64.b64encode(content_bytes).decode('utf-8')
-        string="sendfilegroup {} {} {} {} \r\n" . format(self.tokenid,group_id,filepath,encoded_content)
+        string="sendfilegroup {} {} {} {} \r\n" . format(self.tokenid, group_id, filepath, encoded_content)
         result = self.sendstring(string)
         if result['status']=='OK':
             return "file sent to group {}" . format(group_id)
@@ -203,7 +203,7 @@ class ChatClient:
     def leavegroup(self,group_id="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
-        string="leavegroup {} {} \r\n" . format(self.tokenid,group_id)
+        string="leavegroup {} {} \r\n" . format(self.tokenid, group_id)
         print(string)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -224,7 +224,7 @@ class ChatClient:
     def inboxgroup(self,group_id="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
-        string="inboxgroup {} {} \r\n" . format(self.tokenid,group_id)
+        string="inboxgroup {} {} \r\n" . format(self.tokenid, group_id)
         result = self.sendstring(string)
         if result['status']=='OK':
             return "{}" . format(json.dumps(result['message']))
