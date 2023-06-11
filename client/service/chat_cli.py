@@ -40,11 +40,21 @@ class ChatClient:
                 message=""
                 for w in j[2:]:
                    message="{} {}" . format(message,w)
-                return self.sendmessagegroup(usernameto,message)
+                return self.sendmessagegroup(group_id,message)
+            elif (command=='sendgfile'):
+                group_id = j[1].strip()
+                filepath = j[2].strip()
+                return self.sendfilegroup(group_id,filepath)
+            elif (command=='leavegroup'):
+                group_id = j[1].strip()
+                return self.leavegroup(group_id)
             elif (command=='register'):
                 return self.register(j[1].strip(), j[2].strip(), j[3].strip(), j[4].strip())
             elif (command=='inbox'):
                 return self.inbox()
+            elif (command=='inboxgroup'):
+                group_id = j[1].strip()
+                return self.inboxgroup(group_id)
             else:
                 return "*Maaf, command tidak benar"
         except IndexError:
@@ -117,22 +127,72 @@ class ChatClient:
         else:
             return self.is_fail("Error, {}" . format(result['message']))
         
-
-    def sendmessagegroup(self,usernameto="xxx",message="xxx"):
+    def invitegroup(self,group_id="xxx",username="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
-        string="sendg {} {} {} \r\n" . format(self.tokenid,usernameto,message)
+        string="invitegroup {} {} {} \r\n" . format(self.tokenid,group_id,username)
         print(string)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return self.is_success("message sent to {}" . format(usernameto))
+            return self.is_success("user {} invited to group {}" . format(username,group_id))
         else:
-            return self.is_success("Error, {}" . format(result['message']))
+            return self.is_fail("Error, {}" . format(result['message']))
+
+    def sendmessagegroup(self,group_id="xxx",message="xxx"):
+        if (self.tokenid==""):
+            return self.is_fail("Error, not authorized")
+        string="sendgroup {} {} {} \r\n" . format(self.tokenid,group_id,message)
+        print(string)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return self.is_success("message sent to {}" . format(group_id))
+        else:
+            return self.is_fail("Error, {}" . format(result['message']))
+        
+    def sendfilegroup(self,group_id="xxx",filepath="xxx"):
+        if (self.tokenid==""):
+            return self.is_fail("Error, not authorized")
+        
+        #check if file exists
+        if not os.path.isfile(filepath):
+            return self.is_fail("Error, file not found")
+        
+        # Decode bytes to string
+        with open(filepath, 'rb') as f:
+            content_bytes = f.read()
+            encoded_content = base64.b64encode(content_bytes).decode('utf-8')
+        string="sendgfile {} {} {} {} \r\n" . format(self.tokenid,group_id,filepath,encoded_content)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return self.is_success("file sent to {}" . format(group_id))
+        else:
+            return self.is_fail("Error, {}" . format(result['message']))
+        
+    def leavegroup(self,group_id="xxx"):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        string="leavegroup {} {} \r\n" . format(self.tokenid,group_id)
+        print(string)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return self.is_success("group {} left" . format(group_id))
+        else:
+            return self.is_fail("Error, {}" . format(result['message']))
         
     def inbox(self):
         if (self.tokenid==""):
             return "Error, not authorized"
         string="inbox {} \r\n" . format(self.tokenid)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return self.is_success("{}" . format(json.dumps(result['messages'])))
+        else:
+            return self.is_fail("Error, {}" . format(result['message']))
+    
+    def inboxgroup(self,group_id="xxx"):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        string="inboxgroup {} {} \r\n" . format(self.tokenid,group_id)
         result = self.sendstring(string)
         if result['status']=='OK':
             return self.is_success("{}" . format(json.dumps(result['messages'])))
