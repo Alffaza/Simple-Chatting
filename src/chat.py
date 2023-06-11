@@ -266,7 +266,7 @@ class Chat:
 		for group in self.groups:
 			if (username in self.groups[group]['members']):
 				available_groups[group] = self.groups[group]['nama']
-		return available_groups
+		return {'status': 'OK' , 'groups' : available_groups}
 	
 	def leave_group(self, sessionid, user_me, group_id):
 		if (sessionid not in self.sessions):
