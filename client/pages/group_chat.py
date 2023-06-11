@@ -80,6 +80,7 @@ class GroupChat(Container):
         content=Column(
           alignment='top',
           horizontal_alignment='center',
+          scroll=ScrollMode.AUTO,
           controls=[
             Text(
               value='{}'.format(self.group_name),
