@@ -88,18 +88,8 @@ class Chat:
 				filepath = j[3].strip()
 				encoded_file = j[4].strip()
 				usernamefrom = self.sessions[sessionid]['username']
-				logging.warning("SEND: session {} send file from {} to {}" . format(sessionid, usernamefrom,usernameto))
+				logging.warning("SEND: session {} send file from {} to {}" . format(sessionid, usernamefrom, usernameto))
 				return self.send_file(sessionid,usernamefrom,usernameto,filepath, encoded_file)
-			
-			elif (command=='sendg'):
-				sessionid = j[1].strip()
-				group_id = j[2].strip()
-				message=""
-				for w in j[3:]:
-					message="{} {}" . format(message,w)
-				usernamefrom = self.sessions[sessionid]['username']
-				logging.warning("SEND: session {} send message from {} to {}" . format(sessionid, usernamefrom,group_id))
-				return self.send_message_group(sessionid,usernamefrom,group_id,message)
 			
 			elif (command=='register'):
 				username = j[1].strip()
@@ -113,23 +103,57 @@ class Chat:
 				self.save_user(username)
 				return ok_message("Account successfully registered")
 			
-			elif (command=='groupleave'):
-				# session id, group id
-				return self.leave_group(j[1].strip(), j[2].strip()) 
+			elif (command=='creategroup'):
+				sessionid = j[1].strip()
+				group_name = j[2].strip()
+				user_me = self.sessions[sessionid]['username']
+				logging.warning("CREATEGROUP: session {} user {} has created group {}" . format(sessionid, user_me, group_name))
+				return self.create_group(sessionid, user_me, group_name)
 			
-			elif (command=='groupinvite'):
-				# session id, group id, invited username
-				return self.invite_user_to_group(j[1].strip(), j[2].strip(), j[3].strip()) 
+			elif (command=='listgroup'):
+				sessionid = j[1].strip()
+				user_me = self.sessions[sessionid]['username']
+				logging.warning("LISTGROUP: session {} user {} has requested list of groups" . format(sessionid, user_me))
+				return self.get_groups_with_user(sessionid, user_me)
 			
-			elif (command=='grouprecmsg'):
+			elif (command=='sendgroup'):
+				sessionid = j[1].strip()
+				group_id = j[2].strip()
+				message=""
+				for w in j[3:]:
+					message="{} {}" . format(message,w)
+				usernamefrom = self.sessions[sessionid]['username']
+				logging.warning("SENDGROUP: session {} send message from {} to group {}" . format(sessionid, usernamefrom, group_id))
+				return self.send_message_group(sessionid, usernamefrom, group_id, message)
+			
+			elif (command=='leavegroup'):
 				# session id, group id
-				return self.get_group_messages(j[1].strip(), j[2].strip())
+				sessionid = j[1].strip()
+				group_id = j[2].strip()
+				user_me = self.sessions[sessionid]['username']
+				logging.warning("LEAVEGROUP: session {} user {} has left group {}" . format(sessionid, user_me, group_id))
+				return self.leave_group(sessionid, user_me, group_id)
+			
+			elif (command=='invitegroup'):
+				sessionid = j[1].strip()
+				group_id = j[2].strip()
+				invited_username = j[3].strip()
+				invitation_from = self.sessions[sessionid]['username']
+				logging.warning("INVITEGROUP: session {} {} invited {} to group {}" . format(sessionid, invitation_from, invited_username, group_id))
+				return self.invite_user_to_group(sessionid, invitation_from, invited_username, group_id)
 
 			elif (command=='inbox'):
 				sessionid = j[1].strip()
-				username = self.sessions[sessionid]['username']
-				logging.warning("INBOX: {}" . format(sessionid))
-				return self.get_inbox(username)
+				user_me = self.sessions[sessionid]['username']
+				logging.warning("INBOX: session {} user {} has requested inbox" . format(sessionid, user_me))
+				return self.get_inbox(sessionid, user_me)
+			
+			elif (command=='inboxgroup'):
+				sessionid = j[1].strip()
+				group_id = j[2].strip()
+				user_me = self.sessions[sessionid]['username']
+				logging.warning("INBOXGROUP: session {} user {} has requested inbox group {}" . format(sessionid, user_me, group_id))
+				return self.get_group_messages(sessionid, user_me, group_id)
 			else:
 				return error_message('Incorrect command')
 		except KeyError:
@@ -138,7 +162,7 @@ class Chat:
 			return error_message('Incorrect command arguments')
 		
 
-	def autentikasi_user(self,username,password):
+	def autentikasi_user(self, username, password):
 		if (username not in self.users):
 			return error_message('User not found')
 		if (self.users[username]['password']!= password):
@@ -147,12 +171,12 @@ class Chat:
 		self.sessions[tokenid]={ 'username': username, 'userdetail':self.users[username]}
 		return ok_token(tokenid)
 	
-	def get_user(self,username):
+	def get_user(self, username):
 		if (username not in self.users):
 			return False
 		return self.users[username]
 	
-	def get_group(self,group_id):
+	def get_group(self, group_id):
 		if (group_id not in self.groups):
 			return False
 		return self.groups[group_id]
@@ -170,7 +194,7 @@ class Chat:
 		self.save_group(group_id)
 		return ok_message('Message sent')
 
-	def send_message(self,sessionid,username_from,username_dest,message):
+	def send_message(self, sessionid, username_from, username_dest, message):
 		if (sessionid not in self.sessions):
 			return error_message('Session not found')
 		s_fr = self.get_user(username_from)
@@ -194,7 +218,7 @@ class Chat:
 			inqueue_receiver[username_from].put(message)
 		return ok_message('Message sent')
 	
-	def send_file(self,sessionid,username_from,username_dest,filepath, encoded_file):
+	def send_file(self, sessionid, username_from, username_dest, filepath, encoded_file):
 		if (sessionid not in self.sessions):
 			return error_message('Session not found')
 		s_fr = self.get_user(username_from)
@@ -235,59 +259,59 @@ class Chat:
 		return ok_message('File sent')
 
 	
-	def get_groups_with_user(self, username):
+	def get_groups_with_user(self, sessionid, username):
+		if (sessionid not in self.sessions):
+			return error_message('Session not found')	
 		available_groups = {}
 		for group in self.groups:
 			if (username in self.groups[group]['members']):
 				available_groups[group] = self.groups[group]['nama']
 		return available_groups
 	
-	def leave_group(self,sessionid, group_id):
+	def leave_group(self, sessionid, user_me, group_id):
 		if (sessionid not in self.sessions):
 			return error_message('Session not found')
-		username = self.sessions[sessionid]['username']
-		if (group_id not in self.groups or username not in self.groups[group_id]['members']):
+		if (group_id not in self.groups or user_me not in self.groups[group_id]['members']):
 			return error_message('Group not found')
-		self.groups[group_id]['members'].remove(username)
+		self.groups[group_id]['members'].remove(user_me)
 		if(len(self.groups[group_id]['members']) == 0):
 			self.delete_group(group_id)
 		else:
 			self.save_group(group_id)
 		return ok_message('Successfully left the group')
 	
-	def create_group(self, sessionid, group_name):
+	def create_group(self, sessionid, user_me, group_name):
 		if (sessionid not in self.sessions):
 			return error_message('Session not found')
-		username = self.sessions[sessionid]['username']
 		group_id = str(time.time()).split('.')[0]
 		if(group_id in self.groups):
 			return error_message('failed to make group')
-		self.groups[group_id] = {"nama": group_name, "message_history": [{}], "members": [username]}
+		self.groups[group_id] = {"nama": group_name, "message_history": [{}], "members": [user_me]}
 		self.save_group(group_id)
 		return ok_message('Successfully created group' + group_name)
 
-	def invite_user_to_group(self, sessionid, group_id, invited_username):
+	def invite_user_to_group(self, sessionid, invitation_from, invited_username, group_id):
 		if (sessionid not in self.sessions):
 			return error_message('Session not found')
 		if (invited_username not in self.users):
 			return error_message('The invited user does not exist')
-		username = self.sessions[sessionid]['username']
-		if (group_id not in self.groups or username not in self.groups[group_id]['members']):
+		if (group_id not in self.groups or invitation_from not in self.groups[group_id]['members']):
 			return error_message('Group not found')
 		self.groups[group_id]['members'].append(invited_username)
 		self.save_group(group_id)
 		return('Seccessfully invited '+ invited_username+ ' to ' + self.groups[group_id]['nama'])
 
-	def get_group_messages(self, sessionid, group_id):
+	def get_group_messages(self, sessionid, user_me, group_id):
 		if (sessionid not in self.sessions):
 			return error_message('Session not found')
-		username = self.sessions[sessionid]['username']
-		if (group_id not in self.groups or username not in self.groups[group_id]['members']):
+		if (group_id not in self.groups or user_me not in self.groups[group_id]['members']):
 			return error_message('failed to make group')
 		group_messages = self.groups[group_id]['message_history']
 		return {'status': 'OK', 'messages': group_messages}
 	
-	def get_inbox(self,username):
+	def get_inbox(self,sessionid, username):
+		if (sessionid not in self.sessions):
+			return error_message('Session not found')
 		s_fr = self.get_user(username)
 		incoming = s_fr['incoming']
 		msgs={}
