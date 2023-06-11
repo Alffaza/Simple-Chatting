@@ -1,10 +1,9 @@
 from flet import *
-from utils.extras import *
+from util.extras import *
 
 class SignupPage(Container):
-  def __init__(self,switch_page,username):
+  def __init__(self,switch_page):
     super().__init__()
-    self.username = username
     self.offset = transform.Offset(0,0,)
     self.switch_page = switch_page
 
@@ -39,6 +38,22 @@ class SignupPage(Container):
     
     self.name_box = TextField(
       hint_text='Name',
+      hint_style=TextStyle(
+        size=16,
+        font_family='Poppins Regular',
+        color=input_hint_color,
+      ),
+      text_style=TextStyle(
+        size=16,
+        font_family='Poppins Regular',
+        color=input_hint_color,
+      ),
+      border=InputBorder.NONE,
+      content_padding=content_padding
+    )
+
+    self.country_box = TextField(
+      hint_text='Country',
       hint_style=TextStyle(
         size=16,
         font_family='Poppins Regular',
@@ -129,15 +144,9 @@ class SignupPage(Container):
                           spacing=0,
                           controls=[
                             Text(
-                              value=f'Looks like you don\'t have an account.\nLet\'s create a new account for',
+                              value=f'Make an account',
                               size=14,
                               font_family='poppins light',
-                              color='#ccffffff'
-                            ),
-                            Text(
-                              value=self.username,
-                              size=14,
-                              font_family='poppins medium',
                               color='#ccffffff'
                             ),
                           ]
@@ -160,36 +169,15 @@ class SignupPage(Container):
                           content=self.password_box,
                         ),
                         Container(height=1),
+
                         Container(
-                          content=Column(
-                            spacing=0,
-                            controls=[
-                              Text(
-                                value="By clicking 'Agree and Continue' below,",
-                                size=14,
-                                font_family='poppins light',
-                                color='#ccffffff'
-                              ),
-                              Row(
-                                spacing=0,
-                                controls=[
-                                  Text(
-                                    value="I agree to ",
-                                    size=14,
-                                    font_family='poppins light',
-                                    color='#ccffffff'
-                                  ),
-                                  Text(
-                                    value="Terms of Service and Privacy Policy",
-                                    size=14,
-                                    font_family='poppins medium',
-                                    color=base_green
-                                  ),
-                                ]
-                              )
-                            ]
-                          )
+                          height=btn_height,
+                          bgcolor='white',
+                          border_radius=10,
+                          # padding=20,
+                          content=self.country_box,
                         ),
+                        Container(height=1),
 
                         
                         Container(height=1),
@@ -203,7 +191,7 @@ class SignupPage(Container):
                           border_radius=10,
                           alignment=alignment.center,
                           content=Text(
-                            value='Agree and Continue',
+                            value='Continue',
                             font_family='Poppins Medium',
                             size=16,
 

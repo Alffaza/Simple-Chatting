@@ -1,11 +1,21 @@
 from flet import *
 import pickle
-from utils.extras import *
+from util.extras import *
 from pages.mainpage import MainPage
 from pages.login import LoginPage
 from pages.signup import SignupPage
 from pages.dashboard import DashboardPage
+from service.chat_cli import ChatClient
+import sys
 import asyncio
+
+
+if (len(sys.argv) > 1):
+    TARGET_IP = '0.tcp.ap.ngrok.io'
+    TARGET_PORT = int(sys.argv[1])
+else:
+    TARGET_IP = "127.0.0.1"
+    TARGET_PORT = 1111
 
 async def save_token(token):
   try:
@@ -82,6 +92,7 @@ class App(UserControl):
     self.pg  = pg
     self.pg.spacing = 0
     self.delay = 0.1
+    self.chat_client = ChatClient(TARGET_IP, TARGET_PORT)
     self.anim = animation.Animation(300,AnimationCurve.EASE_IN_OUT_CUBIC)
 
     self.main_page = MainPage(self.switch_page)
@@ -98,43 +109,76 @@ class App(UserControl):
 
   def switch_page(self,e):
     if e.control.data == 'register':
-      name = self.signup_page.name_box.value
-      password = self.signup_page.password_box.value
-      username = self.main_page.username_input.content.value
-   
-      user = register_user(name, username, password)
-      self.screen_views.controls.clear()
-      self.screen_views.controls.append(DashboardPage(self.switch_page,username,))
-      self.screen_views.update()
+      name = self.signup.name_box.value
+      password = self.signup.password_box.value
+      country = self.signup.country_box.value
+
+      response = self.chat_client.register(name,name, password,country)
+
+      if response['status'] == 'OK':
+        self.screen_views.controls.clear()
+        self.screen_views.controls.append(DashboardPage(self.switch_page,name))
+        self.screen_views.update()
+      else:
+        self.signup.error = Row(
+          controls=[
+            Image(
+              src='assets/icons/danger.png',
+            ),
+            Text(
+              value=response['message'],
+              color='red',
+              font_family='poppins regular'
+
+            )
+          ]
+        )
+        self.signup.main_content.controls.insert(1,self.main_page.error)
+
+        self.signup.update()
       return
 
 
     elif e.control.data == 'process_login':
       username = self.main_page.username_input.content.value
-      if is_valid_username(username):
-        user = get_user(username)
-        if user:
-          id = user[0]
-          self._name = user[1]
-          self._username = user[2]
-          self.screen_views.controls.clear()
-          self.login_page = LoginPage(self.switch_page,name=self._name,username=self._username,dp='')
-          # self.login_page.content.on_focus = self.hide_error
-          self.screen_views.controls.append(self.login_page)
-          self.screen_views.update()
-        else:
-          self.screen_views.controls.clear()  
-          self.signup_page = SignupPage(self.switch_page,username)
-          self.screen_views.controls.append(self.signup_page)
-          self.screen_views.update()
+      password = self.main_page.password_input.content.value
+
+      response = self.chat_client.login(username, password)
+      if response['status'] == 'OK':
+        id = self.chat_client.tokenid
+        self._name = self.chat_client.username
+        self._username = self.chat_client.username
+        self.screen_views.controls.clear()
+        # self.login_page = LoginPage(self.switch_page,name=self._name,username=self._username,dp='')
+        self.dashboard = DashboardPage(self.switch_page,username=self._username)
+        # self.login_page.content.on_focus = self.hide_error
+        self.screen_views.controls.append(self.dashboard)
+        self.screen_views.update()
       else:
         self.main_page.username_input.bgcolor = input_error_bg
         self.main_page.username_input.border = border.all(width=2,color=input_error_outline)
-        
+        self.main_page.error = Row(
+          controls=[
+            Image(
+              src='assets/icons/danger.png',
+            ),
+            Text(
+              value=response['message'],
+              color='red',
+              font_family='poppins regular'
+
+            )
+          ]
+        )
         self.main_page.main_content.controls.insert(1,self.main_page.error)
 
         self.main_page.update()
         # self.main_page.username_input.update()
+
+    elif e.control.data == 'register_clicked':
+      self.signup = SignupPage(switch_page=self.switch_page)
+      self.screen_views.controls.append(self.signup)
+      self.screen_views.update()
         
       
     elif e.control.data == 'main_page':
@@ -166,12 +210,7 @@ class App(UserControl):
         pass
       self.screen_views.controls.clear()
       self.screen_views.controls.append(self.main_page)
-      self.screen_views.update()
-
-    
-
-
-      
+      self.screen_views.update()      
 
   def init_helper(self):
     self.pg.add(

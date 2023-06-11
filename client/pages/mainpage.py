@@ -1,5 +1,5 @@
 from flet import *
-from utils.extras import *
+from util.extras import *
 
 
 class MainPage(Container):
@@ -8,6 +8,7 @@ class MainPage(Container):
     super().__init__()
     self.offset = transform.Offset(0,0,)
     self.switch_page = switch_page
+    self.error_msg = ''
     self.error = Row(
       controls=[
         Image(
@@ -16,7 +17,7 @@ class MainPage(Container):
 
         ),
         Text(
-          value='Please check your username.',
+          value=self.error_msg,
           color='red',
           font_family='poppins regular'
 
@@ -25,6 +26,19 @@ class MainPage(Container):
     )
     
     self.expand = True
+
+    self.title_text = Container(
+      content=Text(
+        value= 'Chatting with Kelompok 1',
+        color='#ffffff',
+        style=TextStyle(
+          size=32,
+          font_family='Poppins Regular',
+          color='#ffffff'
+        ),
+      )
+    )
+
     self.username_input = Container(
       height=btn_height,
       bgcolor='white',
@@ -32,6 +46,28 @@ class MainPage(Container):
       content=TextField(
         on_focus=self.field_in_focus,
         hint_text='Username',
+        hint_style=TextStyle(
+          size=16,
+          font_family='Poppins Regular',
+          color=input_hint_color
+        ),
+        text_style=TextStyle(
+          size=16,
+          font_family='Poppins Regular',
+          color=input_hint_color,
+        ),
+        border=InputBorder.NONE,
+        content_padding=content_padding
+      )
+    )
+
+    self.password_input = Container(
+      height=btn_height,
+      bgcolor='white',
+      border_radius=10,
+      content=TextField(
+        on_focus=self.field_in_focus,
+        hint_text='Password',
         hint_style=TextStyle(
           size=16,
           font_family='Poppins Regular',
@@ -49,7 +85,9 @@ class MainPage(Container):
 
     self.main_content = Column(
       controls=[
+        self.title_text,
         self.username_input,
+        self.password_input,
         Container(height=0),
         Container(
           on_click=self.switch_page,
@@ -63,6 +101,20 @@ class MainPage(Container):
             value='Continue',
             font_family='Poppins Medium',
             size=18,
+          )
+        ),
+        Container(
+          on_click=self.switch_page,
+          data = 'register_clicked',
+          height=btn_height/2,
+          width=btn_width/2,
+          bgcolor=base_green,
+          border_radius=10,
+          alignment=alignment.center,
+          content=Text(
+            value='Register',
+            font_family='Poppins Medium',
+            size=9,
           )
         ),
       ]
