@@ -2,10 +2,16 @@ import base64
 import socket
 import os
 import json
+import sys
 
-TARGET_IP = "127.0.0.1"
-TARGET_PORT = 8889
+if (len(sys.argv) > 1):
+    TARGET_IP = '0.tcp.ap.ngrok.io'
+    TARGET_PORT = int(sys.argv[1])
+else:
+    TARGET_IP = "127.0.0.1"
+    TARGET_PORT = 1111
 
+print('using ' + TARGET_IP + str(TARGET_PORT))
 
 class ChatClient:
     def __init__(self):
