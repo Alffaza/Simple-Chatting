@@ -52,12 +52,13 @@ class GroupChatList(Container):
     
     group_containers.controls= group_buttons
 
-    self.user_search_input = Container(
+    self.create_group_input = Container(
       height=btn_height,
+      width=btn_width-60,
       bgcolor='#f0f0f0',
       border_radius=10,
       content=TextField(
-        hint_text='Search username to message',
+        hint_text='Create a group',
         hint_style=TextStyle(
           size=16,
           font_family='Poppins Regular',
@@ -90,6 +91,25 @@ class GroupChatList(Container):
               value='GROUPS!',
               color=white
             ),
+            Row(
+            vertical_alignment='bottom',
+            alignment='center',
+            controls=[
+            self.create_group_input,
+            Container(
+              on_click= self.switch_page,
+              data ='create_group',
+              height=30,
+              width=30,
+              border_radius=10,
+              bgcolor='#00ff00',
+              content=Icon(
+                icons.SEND,
+                color='black'
+              )
+            )
+          ]
+        ),
             group_containers,
             Container(
               on_click= self.switch_page,
@@ -102,7 +122,7 @@ class GroupChatList(Container):
                 icons.LOGOUT_OUTLINED,
                 color='black'
               )
-            )
+            ),
           ]
         )
         

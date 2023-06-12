@@ -126,7 +126,17 @@ class ChatClient:
             return self.is_success("file sent to {}" . format(usernameto))
         else:
             return self.is_fail("Error, {}" . format(result['message']))
-        
+
+    def creategroup(self, group_name):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        string="creategroup {} {} \r\n" . format(self.tokenid, group_name)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return self.is_success("{}" . format(result['message']))
+        else:
+            return self.is_fail("Error, {}" . format(result['message']))
+
     def listgroup(self):
         if (self.tokenid==""):
             return "Error, not authorized"
