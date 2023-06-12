@@ -126,6 +126,26 @@ class ChatClient:
             return self.is_success("file sent to {}" . format(usernameto))
         else:
             return self.is_fail("Error, {}" . format(result['message']))
+
+    def creategroup(self, group_name):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        string="creategroup {} {} \r\n" . format(self.tokenid, group_name)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return self.is_success("{}" . format(result['message']))
+        else:
+            return self.is_fail("Error, {}" . format(result['message']))
+
+    def listgroup(self):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        string="listgroup {} \r\n" . format(self.tokenid)
+        result = self.sendstring(string)
+        if result['status']=='OK':
+            return self.is_success("{}" . format(json.dumps(result['groups'])))
+        else:
+            return self.is_fail("Error, {}" . format(result['message']))
         
     def invitegroup(self,group_id="xxx",username="xxx"):
         if (self.tokenid==""):
@@ -195,7 +215,7 @@ class ChatClient:
         string="inboxgroup {} {} \r\n" . format(self.tokenid,group_id)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return self.is_success("{}" . format(json.dumps(result['messages'])))
+            return self.is_success("{}" . format(json.dumps(result['message'])))
         else:
             return self.is_fail("Error, {}" . format(result['message']))
 
