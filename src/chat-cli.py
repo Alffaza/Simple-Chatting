@@ -7,7 +7,7 @@ import sys
 # TARGET_IP = "127.0.0.1"
 # TARGET_PORT = 1111
 
-TARGET_IP = "0.tcp.ngrok.io"
+TARGET_IP = "0.tcp.ap.ngrok.io"
 TARGET_PORT = 14450
 
 print('using ' + TARGET_IP + str(TARGET_PORT))
@@ -123,6 +123,7 @@ class ChatClient:
             return "Error, not authorized"
         
         #check if file exists
+        print(filepath)
         if not os.path.isfile(filepath):
             return "Error, file not found"
         
