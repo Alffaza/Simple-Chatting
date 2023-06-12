@@ -50,7 +50,8 @@ class Chat:
 			file = open(filepath,'r')
 			deserialized_json = json.load(file)
 			username = filename.split('.')[0]
-			self.privates[username]['incoming'] = deserialized_json
+			# self.privates[username]['incoming'] = deserialized_json
+			self.privates[username] = deserialized_json
 			# print(username)
 			# print(deserialized_json)
 
