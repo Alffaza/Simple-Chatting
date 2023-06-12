@@ -192,20 +192,6 @@ class App(UserControl):
             self.groupchat.refresher.join()
       else:
         print('error')
-    
-    elif e.control.data == 'create_group':
-      group_name = self.grouplist.create_group_input.content.value
-      response = self.chat_client.creategroup(group_name)
-      if response['status'] == 'OK':
-        response = self.chat_client.listgroup()
-        if response['status'] == 'OK':
-          self.grouplist = GroupChatList(self.switch_page,response['message'])
-          self.screen_views.controls.append(self.grouplist)
-          self.screen_views.update()
-          if self.groupchat != None and self.groupchat.refresher != None:
-            self.groupchat.refresher.join()
-      else:
-        print('error')
 
     elif e.control.data.split(' ')[0] == 'invite_user':
       group_id = e.control.data.split(' ')[1]
