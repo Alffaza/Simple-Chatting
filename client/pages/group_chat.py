@@ -68,6 +68,28 @@ class GroupChat(Container):
       )
     )
 
+    self.user_invite_input = Container(
+      height=btn_height,
+      width=btn_width-60,
+      bgcolor='#f0f0f0',
+      border_radius=10,
+      content=TextField(
+        hint_text='username to invite',
+        hint_style=TextStyle(
+          size=16,
+          font_family='Poppins Regular',
+          color=input_hint_color,
+        ),
+        text_style=TextStyle(
+          size=16,
+          font_family='Poppins Regular',
+          color=input_hint_color,
+        ),
+        border=InputBorder.NONE,
+        content_padding=content_padding
+      )
+    )
+
     self.content = Container(
       
         height=base_height,
@@ -111,6 +133,36 @@ class GroupChat(Container):
               width=30,
               border_radius=10,
               bgcolor='#ffffff',
+              content=Icon(
+                icons.SEND,
+                color='black'
+              )
+            )
+          ] 
+        ), Row(
+            vertical_alignment='bottom',
+            alignment='center',
+            controls=[
+              Container(
+                on_click= self.switch_page,
+                data ='leave_group ' + str(self.group_id),
+                height=30,
+                width=30,
+                border_radius=10,
+                bgcolor='#ff0000',
+                content=Icon(
+                  icons.LOGOUT_OUTLINED,
+                  color='black'
+                )
+              ),
+            self.user_invite_input,
+            Container(
+              on_click= self.switch_page,
+              data ='invite_user ' + str(self.group_id),
+              height=30,
+              width=30,
+              border_radius=10,
+              bgcolor='#00ff00',
               content=Icon(
                 icons.SEND,
                 color='black'
