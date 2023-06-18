@@ -4,11 +4,11 @@ import os
 import json
 import sys
 
-# TARGET_IP = "127.0.0.1"
-# TARGET_PORT = 1111
+TARGET_IP = "127.0.0.1"
+TARGET_PORT = 1111
 
-TARGET_IP = "0.tcp.ap.ngrok.io"
-TARGET_PORT = 14450
+# TARGET_IP = "0.tcp.ap.ngrok.io"
+# TARGET_PORT = 15808
 
 print('using ' + TARGET_IP + str(TARGET_PORT))
 
@@ -27,6 +27,8 @@ class ChatClient:
                 username=j[1].strip()
                 password=j[2].strip()
                 return self.login(username,password)
+            elif (command=='listpc'):
+                return self.listpc()
             elif (command=='send'):
                 usernameto = j[1].strip()
                 message=""
@@ -62,7 +64,8 @@ class ChatClient:
             elif (command=='register'):
                 return self.register(j[1].strip(), j[2].strip(), j[3].strip(), j[4].strip())
             elif (command=='inbox'):
-                return self.inbox()
+                inbox_with = j[1].strip()
+                return self.inbox(inbox_with)
             elif (command=='inboxgroup'):
                 group_id = j[1].strip()
                 return self.inboxgroup(group_id)
@@ -106,9 +109,21 @@ class ChatClient:
         else:
             return "Error, {}" . format(result['message'])
         
+    def listpc(self):
+        if (self.tokenid==""):
+            return "Error, not authorized"
+        string="listpc {} \r\n" . format(self.tokenid)
+        result = self.sendstring(string)
+        if result!=[]:
+            return "{}" . format(json.dumps(result))
+        else:
+            return "Error, {}" . format(result['message'])
+
     def sendmessage(self,usernameto="xxx",message="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
+        if (message[0] == " "):
+            message = message[1:]
         string="send {} {} {} \r\n" . format(self.tokenid, usernameto, message)
         print(string)
         result = self.sendstring(string)
@@ -211,13 +226,15 @@ class ChatClient:
         else:
             return "Error, {}" . format(result['message'])
         
-    def inbox(self):
+    def inbox(self, inbox_with="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
-        string="inbox {} \r\n" . format(self.tokenid)
+        string="inbox {} {} \r\n" . format(self.tokenid, inbox_with)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return "{}" . format(json.dumps(result))
+            if result['message'] == []:
+                return "No message"
+            return "{}" . format(json.dumps(result['message']))
         else:
             return "Error, {}" . format(result['message'])
     

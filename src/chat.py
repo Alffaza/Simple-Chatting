@@ -11,6 +11,7 @@ from os import listdir
 from os.path import isfile, join, dirname, realpath
 
 user_dir = "../users"
+private_dir = "../privates"
 group_dir = "../groups"
 
 def error_message(message):
@@ -27,6 +28,8 @@ class Chat:
 		self.sessions={}
 		self.users = {}
 		# users[username] = {nama: "", negara: "", password: ""}]}
+		self.privates = {}
+		# privates[id] = {userx: "", usery: "", message_history: [{from, message}]}]}
 		self.groups = {}
 		# groups[id] = {members: [], message_history: [{from, message}]}]}
 		for filename in listdir(user_dir):
@@ -35,6 +38,15 @@ class Chat:
 			deserialized_json = json.load(file)
 			username = filename.split('.')[0]
 			self.users[username] = deserialized_json
+			# print(username)
+			# print(deserialized_json)
+
+		for filename in listdir(private_dir):
+			filepath = private_dir + "/" + filename
+			file = open(filepath,'r')
+			deserialized_json = json.load(file)
+			username = filename.split('.')[0]
+			self.privates[username] = deserialized_json
 			# print(username)
 			# print(deserialized_json)
 
@@ -52,6 +64,13 @@ class Chat:
 		with open( filepath, "w") as outfile:
 			json.dump(self.users[name], outfile)
 
+	def save_private(self, userx, usery):
+		# sorted str of userx and usery as id
+		id = ''.join(sorted([userx, usery]))
+		filepath = private_dir + "/" + str(id) + ".json"
+		with open( filepath, "w") as outfile:
+			json.dump(self.privates[id], outfile)
+
 	def save_group(self, id):
 		filepath = group_dir + "/" + str(id) + ".json"
 		with open( filepath, "w") as outfile:
@@ -64,13 +83,21 @@ class Chat:
 
 	def proses(self,data):
 		j=data.split(" ")
+		print("data: {}" . format(j))
 		try:
 			command=j[0].strip()
+			print("command: {}" . format(command))
 			if (command=='auth'):
 				username=j[1].strip()
 				password=j[2].strip()
 				logging.warning("AUTH: auth {} {}" . format(username,password))
 				return self.autentikasi_user(username,password)
+			
+			elif (command=='listpc'):
+				sessionid = j[1].strip()
+				user_me = self.sessions[sessionid]['username']
+				logging.warning("LISTPRIVATECHAT: session {} user {} has requested list of private messages" . format(sessionid, user_me))
+				return self.get_private_chat(sessionid, user_me)
 			
 			elif (command=='send'):
 				sessionid = j[1].strip()
@@ -153,9 +180,10 @@ class Chat:
 
 			elif (command=='inbox'):
 				sessionid = j[1].strip()
+				inbox_with = j[2].strip()
 				user_me = self.sessions[sessionid]['username']
-				logging.warning("INBOX: session {} user {} has requested inbox" . format(sessionid, user_me))
-				return self.get_inbox(sessionid, user_me)
+				logging.warning("INBOX: session {} user {} has requested inbox with {}" . format(sessionid, user_me, inbox_with))
+				return self.get_inbox(sessionid, user_me, inbox_with)
 			
 			elif (command=='inboxgroup'):
 				sessionid = j[1].strip()
@@ -185,10 +213,24 @@ class Chat:
 			return False
 		return self.users[username]
 	
+	def get_private(self, user):
+		# ambil semua nama pada file private, pada setiap iterasi, jika user ada di nama file tersebut, catat nama filenya, kemudian return kumpulan nama file tersebut
+		available_private_chat = []
+		for private in self.privates:
+			if (user in private):
+				available_private_chat.append(private.replace(user, ""))
+		return available_private_chat
+	
 	def get_group(self, group_id):
 		if (group_id not in self.groups):
 			return False
 		return self.groups[group_id]
+	
+	def get_private_chat(self, sessionid, username):
+		if (sessionid not in self.sessions):
+			return error_message('Session not found')
+		available_privat_chat = self.get_private(username)
+		return {'status': 'OK' , 'private_chat' : available_privat_chat}
 	
 	def send_message_group(self, sessionid, username_from, group_id, message):
 		if (sessionid not in self.sessions):
@@ -208,23 +250,15 @@ class Chat:
 			return error_message('Session not found')
 		s_fr = self.get_user(username_from)
 		s_to = self.get_user(username_dest)
-		
 		if (s_fr==False or s_to==False):
 			return error_message('User not found')
-
-		message = { 'msg_from': s_fr['nama'], 'msg_to': s_to['nama'], 'msg': message }
-		outqueue_sender = s_fr['outgoing']
-		inqueue_receiver = s_to['incoming']
-		try:	
-			outqueue_sender[username_from].put(message)
-		except KeyError:
-			outqueue_sender[username_from]=Queue()
-			outqueue_sender[username_from].put(message)
-		try:
-			inqueue_receiver[username_from].put(message)
-		except KeyError:
-			inqueue_receiver[username_from]=Queue()
-			inqueue_receiver[username_from].put(message)
+		message_log = { 'msg_from': s_fr['nama'], 'msg_to': s_to['nama'], 'msg': message }
+		id = ''.join(sorted([username_from, username_dest]))
+		if (id not in self.privates):
+			self.privates[id] = {"userx": username_from, "usery": username_dest, "message_history": []}
+		self.privates[id]['message_history'].append({"sender": username_from, "mesasge": message})
+		print(self.privates[id])
+		self.save_private(username_from, username_dest)
 		return ok_message('Message sent')
 	
 	def send_file(self, sessionid, username_from, username_dest, filepath, encoded_file):
@@ -232,33 +266,23 @@ class Chat:
 			return error_message('Session not found')
 		s_fr = self.get_user(username_from)
 		s_to = self.get_user(username_dest)
-		
 		if (s_fr==False or s_to==False):
 			return error_message('User not found')
-
 		filename = os.path.basename(filepath)
-		message = { 'msg_from': s_fr['nama'], 'msg_to': s_to['nama'], 'file_name': filename, 'file': encoded_file }
-		outqueue_sender = s_fr['outgoing']
-		inqueue_receiver = s_to['incoming']
-		try:	
-			outqueue_sender[username_from].put(message)
-		except KeyError:
-			outqueue_sender[username_from]=Queue()
-			outqueue_sender[username_from].put(message)
-		try:
-			inqueue_receiver[username_from].put(message)
-		except KeyError:
-			inqueue_receiver[username_from]=Queue()
-			inqueue_receiver[username_from].put(message)
-		
-		#simpan file dalam folder files/<user_to>/dest_filename dengan nama <tanggal>-<user_from>-<user_to>-<filename>.<ekstensi>
+		time_now = time.strftime("%Y%m%d-%H%M%S")
+		id = ''.join(sorted([username_from, username_dest]))
+		filesum = f"{time_now}_{username_from}_{id}_{filename}"
+		if (id not in self.privates):
+			self.privates[id] = {"userx": username_from, "usery": username_dest, "message_history": []}
+		self.privates[id]['message_history'].append({"sender": username_from, "filename": filesum, "file": encoded_file})
+		self.save_private(username_from, username_dest)
+
+		#simpan file dalam folder files/<id>/dest_filename dengan nama <tanggal>-<user_from>-<user_to>-<filename>.<ekstensi>
 		#misal 2017-04-05-messi-henderson-funny.gif
 		filedest = join(dirname(realpath(__file__)), "files/")
 		os.makedirs(filedest, exist_ok=True)
-		filedest = join(filedest, username_dest)
+		filedest = join(filedest, id)
 		os.makedirs(filedest, exist_ok=True)
-		time_now = time.strftime("%Y%m%d-%H%M%S")
-		filesum = f"{time_now}_{username_from}_{username_dest}_{filename}"
 		filedest = join(filedest, filesum)
 
 		decode_content = base64.decodebytes(encoded_file.encode('utf-8'))
@@ -266,7 +290,8 @@ class Chat:
 			f.write(decode_content)
 
 		return ok_message('File sent')
-	
+		
+
 	def send_file_group(self, sessionid, username_from, group_id, filepath, encoded_file):
 		if (sessionid not in self.sessions):
 			return error_message('Session not found')
@@ -344,18 +369,16 @@ class Chat:
 		group_messages = self.groups[group_id]['message_history']
 		return ok_message(group_messages)
 	
-	def get_inbox(self,sessionid, username):
+	def get_inbox(self,sessionid, user_me, inbox_with):
 		if (sessionid not in self.sessions):
 			return error_message('Session not found')
-		s_fr = self.get_user(username)
-		incoming = s_fr['incoming']
-		msgs={}
-		for users in incoming:
-			msgs[users]=[]
-			while not incoming[users].empty():
-				msgs[users].append(s_fr['incoming'][users].get_nowait())
-			
-		return ok_message(msgs)
+		if (inbox_with not in self.users):
+			return error_message('User not found')
+		id = ''.join(sorted([user_me, inbox_with]))
+		if (id not in self.privates):
+			return ok_message([])
+		inbox = self.privates[id]['message_history']
+		return ok_message(inbox)
 
 
 if __name__=="__main__":
@@ -366,7 +389,7 @@ if __name__=="__main__":
 	tokenid = sesi['tokenid']
 
 	#testing
-	print(j.leave_group(tokenid, '1686417836'))
+	# print(j.leave_group(tokenid, '1686417836'))
 	# print(j.invite_user_to_group(tokenid, '1686418078', 'faza'))
 
 	# print(j.proses("send {} henderson hello gimana kabarnya son " . format(tokenid)))
