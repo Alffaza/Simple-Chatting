@@ -233,7 +233,7 @@ class ChatClient:
         result = self.sendstring(string)
         if result['status']=='OK':
             if result['message'] == []:
-                return "No message"
+                return "{}" . format(json.dumps("No message"))
             return "{}" . format(json.dumps(result['message']))
         else:
             return "Error, {}" . format(result['message'])

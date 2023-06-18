@@ -83,10 +83,10 @@ class Chat:
 
 	def proses(self,data):
 		j=data.split(" ")
-		print("data: {}" . format(j))
+		# print("data: {}" . format(j))
 		try:
 			command=j[0].strip()
-			print("command: {}" . format(command))
+			# print("command: {}" . format(command))
 			if (command=='auth'):
 				username=j[1].strip()
 				password=j[2].strip()
