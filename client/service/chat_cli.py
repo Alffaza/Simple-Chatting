@@ -95,7 +95,17 @@ class ChatClient:
             return self.is_success( "successfully created account {}" . format(username))
         else:
             return self.is_fail( "Error, {}" . format(result['message']))
-        
+
+    def listpc(self):
+        if (self.tokenid==""):
+            return self.is_fail("Error, not authorized")
+        string="listpc {} \r\n" . format(self.tokenid)
+        result = self.sendstring(string)
+        if result!=[]:
+            return self.is_success("{}" . format(json.dumps(result)))
+        else:
+            return self.is_fail("Error, {}" . format(result['message']))
+
     def sendmessage(self,usernameto="xxx",message="xxx"):
         if (self.tokenid==""):
             return "Error, not authorized"
@@ -110,11 +120,11 @@ class ChatClient:
     #create function sendfile from specific path
     def sendfile(self,usernameto="xxx",filepath="xxx"):
         if (self.tokenid==""):
-            return "Error, not authorized"
+            return self.is_fail("Error, not authorized")
         
         #check if file exists
         if not os.path.isfile(filepath):
-            return "Error, file not found"
+            return self.is_fail("Error, file not found")
         
         # Decode bytes to string
         with open(filepath, 'rb') as f:
@@ -129,7 +139,7 @@ class ChatClient:
 
     def creategroup(self, group_name):
         if (self.tokenid==""):
-            return "Error, not authorized"
+            return self.is_fail("Error, not authorized")
         string="creategroup {} {} \r\n" . format(self.tokenid, group_name)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -139,7 +149,7 @@ class ChatClient:
 
     def listgroup(self):
         if (self.tokenid==""):
-            return "Error, not authorized"
+            return self.is_fail("Error, not authorized")
         string="listgroup {} \r\n" . format(self.tokenid)
         result = self.sendstring(string)
         if result['status']=='OK':
@@ -199,13 +209,13 @@ class ChatClient:
         else:
             return self.is_fail("Error, {}" . format(result['message']))
         
-    def inbox(self):
+    def inbox(self, usernameto="messi"):
         if (self.tokenid==""):
             return "Error, not authorized"
-        string="inbox {} \r\n" . format(self.tokenid)
+        string="inbox {} {}\r\n" . format(self.tokenid, usernameto)
         result = self.sendstring(string)
         if result['status']=='OK':
-            return self.is_success("{}" . format(json.dumps(result['messages'])))
+            return self.is_success("{}" . format(json.dumps(result['message'])))
         else:
             return self.is_fail("Error, {}" . format(result['message']))
     

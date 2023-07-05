@@ -1,12 +1,15 @@
 from flet import *
 import pickle
+import json
 from util.extras import *
 from pages.mainpage import MainPage
 from pages.login import LoginPage
 from pages.signup import SignupPage
 from pages.dashboard import DashboardPage
 from pages.group_list import GroupChatList
+from pages.pc_list import PrivateChatList
 from pages.group_chat import GroupChat
+from pages.privatechat import PrivateChat
 # from pages.private_chat import 
 from service.chat_cli import ChatClient
 import sys
@@ -149,6 +152,16 @@ class App(UserControl):
       self.screen_views.controls.append(self.dashboard)
       self.screen_views.update()
 
+    elif e.control.data == 'open_private_chats':
+      response = self.chat_client.listpc()
+      if response['status'] == 'OK':
+        print(response['message'])
+        self.pclist = PrivateChatList(self.switch_page,response['message'])
+        self.screen_views.controls.append(self.pclist)
+        self.screen_views.update()
+        if self.privatechat != None and self.privatechat.refresher != None:
+          self.privatechat.refresher.join()
+
     elif e.control.data == 'open_groups':
       response = self.chat_client.listgroup()
       if response['status'] == 'OK':
@@ -158,6 +171,17 @@ class App(UserControl):
         if self.groupchat != None and self.groupchat.refresher != None:
           self.groupchat.refresher.join()
 
+    elif e.control.data.split(' ')[0] == 'open_private_chat':
+      username_with = e.control.data.split(' ')[1]
+      response = self.chat_client.inbox(username_with)
+      if response['status'] == 'OK':
+        print(response)
+        self.privatechat = PrivateChat(self.switch_page, username_with, self.chat_client, self.screen_views)
+        self.screen_views.controls.append(self.privatechat)
+        self.screen_views.update()
+      else:
+        print('error')
+
     elif e.control.data.split(' ')[0] == 'open_group_chat':
       group_id = e.control.data.split(' ')[1]
       group_name = e.control.data.split(' ')[2]
@@ -165,6 +189,16 @@ class App(UserControl):
       if response['status'] == 'OK':
         self.groupchat = GroupChat(self.switch_page, group_id,group_name, self.chat_client, self.screen_views)
         self.screen_views.controls.append(self.groupchat)
+        self.screen_views.update()
+      else:
+        print('error')
+
+    elif e.control.data.split(' ')[0] == 'send_message_private':
+      uname_to = e.control.data.split(' ')[1]
+      sent_message = self.privatechat.user_text_input.content.value
+      response = self.chat_client.sendmessage(uname_to, sent_message)
+      if response['status'] == 'OK':
+        self.privatechat.update_messages()
         self.screen_views.update()
       else:
         print('error')
@@ -206,6 +240,21 @@ class App(UserControl):
             self.groupchat.refresher.join()
       else:
         print('error')
+
+    elif e.control.data == 'create_new_private_chat':
+      uname = self.pclist.create_chat_input.content.value
+      response = self.chat_client.sendmessage(uname, "hello! nice to meet you")
+      if response['status'] == 'OK':
+        response = self.chat_client.listpc()
+        if response['status'] == 'OK':
+          print(response['message'])
+          self.pclist = PrivateChatList(self.switch_page,response['message'])
+          self.screen_views.controls.append(self.pclist)
+          self.screen_views.update()
+          if self.privatechat != None and self.privatechat.refresher != None:
+            self.privatechat.refresher.join()
+        else:
+          print('error')
 
     elif e.control.data.split(' ')[0] == 'invite_user':
       group_id = e.control.data.split(' ')[1]
