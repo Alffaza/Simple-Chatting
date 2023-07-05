@@ -240,7 +240,7 @@ class Chat:
 		if (s_fr==False or g_to==False):
 			return error_message('Group not found')
 		message_log = { 'msg_from': s_fr['nama'], 'msg_to': g_to['nama'], 'msg': message }
-		self.groups[group_id]['message_history'].append({"sender": username_from, "mesasge": message})
+		self.groups[group_id]['message_history'].append({"sender": username_from, "message": message})
 		print(self.groups[group_id])
 		self.save_group(group_id)
 		return ok_message('Message sent')
@@ -256,7 +256,7 @@ class Chat:
 		id = ''.join(sorted([username_from, username_dest]))
 		if (id not in self.privates):
 			self.privates[id] = {"userx": username_from, "usery": username_dest, "message_history": []}
-		self.privates[id]['message_history'].append({"sender": username_from, "mesasge": message})
+		self.privates[id]['message_history'].append({"sender": username_from, "message": message})
 		print(self.privates[id])
 		self.save_private(username_from, username_dest)
 		return ok_message('Message sent')
