@@ -89,3 +89,85 @@ this command only can access after authentication
 inboxgroup {group id}
 ```
 - group id must already created, you can check it with listgroup command
+
+
+## COMMANDS AT REALMS BEETWEEN
+this command only can access after authentication
+
+### add realm
+```
+addrealm {realm name} {realm address} {realm port}
+```
+- realm name can't contain space
+- realm name can't same with other realm name
+
+
+### list realm
+```
+listrealm
+```
+
+### send private message to another user at another realm
+```
+sendpcrealm {realm name} {recipient username} {message}
+```
+- realm name must already added, you can check it with listrealm command
+
+### get list of private chat from another user at another realm
+```
+listpcrealm {realm name}
+```
+- realm name must already added, you can check it with listrealm command
+
+### send file to another user at another realm
+```
+sendfilerealm {realm name} {recipient username} {file path}
+```
+- realm name must already added, you can check it with listrealm command
+
+### create group at another realm
+```
+creategrouprealm {realm name} {group name}
+```
+- realm name must already added, you can check it with listrealm command
+
+### list group at another realm
+```
+listgrouprealm {realm name}
+```
+- realm name must already added, you can check it with listrealm command
+
+### invite user to group at another realm
+```
+invitegrouprealm {realm name} {group id} {username}
+```
+- realm name must already added, you can check it with listrealm command
+- group id must already created, you can check it with listgrouprealm command
+
+### send message to group at another realm
+```
+sendgrouprealm {realm name} {group id} {message}
+```
+- realm name must already added, you can check it with listrealm command
+- group id must already created, you can check it with listgrouprealm command
+
+### send file to group at another realm
+```
+sendgroupfilerealm {realm name} {group id} {file path}
+```
+- realm name must already added, you can check it with listrealm command
+- group id must already created, you can check it with listgrouprealm command
+
+### check my inbox from specific user at another realm
+```
+inboxrealm {realm name} {username}
+```
+- realm name must already added, you can check it with listrealm command
+- username must already contact you, you can check it with listpcrealm command
+
+### check my inbox from specific group at another realm
+```
+inboxgrouprealm {realm name} {group id}
+```
+- realm name must already added, you can check it with listrealm command
+- group id must already created and you are member of that group, you can check it with listgrouprealm command
