@@ -1,11 +1,11 @@
 from flet import *
 from util.extras import *
+import json
 
-class DashboardPage(Container):
-  def __init__(self,switch_page,username):
+class PrivateChatList(Container):
+  def __init__(self,switch_page,chats):
     super().__init__()
     self.offset = transform.Offset(0,0,)
-    self.username = username
     self.switch_page = switch_page
     self.expand = True
     white = '#ffffff'
@@ -26,12 +26,39 @@ class DashboardPage(Container):
       ]
     )
 
-    self.user_search_input = Container(
+    chat_containers = Column(
+      alignment='center',
+      horizontal_alignment='center',
+    )
+
+    chat_buttons = []
+    chats = json.loads(chats)
+    chats = chats['private_chat']
+    # print(chats)
+    for chat in chats:
+      butt = Container(
+        bgcolor='#f0f0f0',
+        on_click=switch_page,
+        data = 'open_private_chat ' + chat,
+        border_radius=10,
+        width=btn_width,
+        height=btn_height,
+        padding=padding.only(top=15,left=10,right=10,),
+        content=Text(
+          value=chat
+        )
+      )
+      chat_buttons.append(butt)
+    
+    chat_containers.controls= chat_buttons
+
+    self.create_chat_input = Container(
       height=btn_height,
+      width=btn_width-60,
       bgcolor='#f0f0f0',
       border_radius=10,
       content=TextField(
-        hint_text='Search username to message',
+        hint_text='Chat with another user',
         hint_style=TextStyle(
           size=16,
           font_family='Poppins Regular',
@@ -61,41 +88,32 @@ class DashboardPage(Container):
           horizontal_alignment='center',
           controls=[
             Text(
-              value='Welcome {}!'.format(username),
+              value='chats!',
               color=white
             ),
-            # self.user_search_input,
-            Container(
-              on_click=self.switch_page,
-              data = 'open_private_chats',
-              height=btn_height,
-              width=btn_width,
-              bgcolor=base_green,
-              border_radius=10,
-              alignment=alignment.center,
-              content=Text(
-              value='Private Chats',
-              font_family='Poppins Medium',
-              size=18,
-              )
-            ),
-            Container(
-              on_click=self.switch_page,
-              data = 'open_groups',
-              height=btn_height,
-              width=btn_width,
-              bgcolor=base_green,
-              border_radius=10,
-              alignment=alignment.center,
-              content=Text(
-              value='Check groups',
-              font_family='Poppins Medium',
-              size=18,
-              )
-            ),
+            Row(
+            vertical_alignment='bottom',
+            alignment='center',
+            controls=[
+            self.create_chat_input,
             Container(
               on_click= self.switch_page,
-              data ='logout',
+              data ='create_new_private_chat',
+              height=30,
+              width=30,
+              border_radius=10,
+              bgcolor='#00ff00',
+              content=Icon(
+                icons.SEND,
+                color='black'
+              )
+            )
+          ]
+        ),
+            chat_containers,
+            Container(
+              on_click= self.switch_page,
+              data ='moveto_dashboard',
               height=50,
               width=100,
               border_radius=30,
@@ -104,7 +122,7 @@ class DashboardPage(Container):
                 icons.LOGOUT_OUTLINED,
                 color='black'
               )
-            )
+            ),
           ]
         )
         
